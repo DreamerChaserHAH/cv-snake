@@ -8,8 +8,6 @@
 #include <raylib.h>
 #include <raygui.h>
 
-#include <ai.hpp>
-
 #include <functional>
 #include <iostream>
 #include <queue>
@@ -335,7 +333,7 @@ int main(){
     SetTargetFPS(TARGET_FPS);
 
     WorldRendererSystem wrs = WorldRendererSystem(10, 10);
-    SnakeController controller = SnakeController(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
+    SnakeController controller = SnakeController(KEY_W, KEY_S, KEY_A, KEY_D);
     Snake snake = Snake(&controller);
 
     while(!WindowShouldClose()){
