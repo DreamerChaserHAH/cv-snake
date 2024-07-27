@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 project(cv-snake)
 
 add_executable(cv-snake src/game.cpp)
-add_library(cv-snake-ai SHARED src/ai.cpp)
+add_executable(cv-snake-ai src/ai.cpp)
 
 add_subdirectory(libs/raylib)
 find_package(Torch REQUIRED HINTS libs/libtorch)
@@ -22,4 +22,4 @@ include_directories(include libs/raygui/src)
 target_include_directories(cv-snake-ai PRIVATE ${TORCH_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 target_link_libraries(cv-snake-ai ${TORCH_LIBRARIES} opencv_core opencv_highgui opencv_imgproc)
-target_link_libraries(cv-snake raylib cv-snake-ai)
+target_link_libraries(cv-snake raylib)

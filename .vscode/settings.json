@@ -1,5 +1,8 @@
 {
     "files.associations": {
         "queue": "cpp"
+    },
+    "cmake.debugConfig": {
+        
     }
 }
