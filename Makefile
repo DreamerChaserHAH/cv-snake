@@ -9,7 +9,7 @@ ifeq ($(OS),Darwin)
 	@echo "Downloading libtorch for MacOS"
 	rm -rf libs/libtorch
 	curl -L https://github.com/mlverse/libtorch-mac-m1/releases/download/LibTorchOpenMP/libtorch-v2.1.0.zip -o libs/libtorch.zip
-	unzip libs/libtorch.zip -d libs/libtorch
+	unzip libs/libtorch.zip -d libs
 	rm libs/libtorch.zip
 else
 	@echo "Running on a different operating system"
