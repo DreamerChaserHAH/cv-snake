@@ -1,3 +1,6 @@
 torch
 opencv-python
 pyautogui
+pygetwindow
+Pillow 
+pyobjc-framework-Quartz

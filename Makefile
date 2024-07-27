@@ -32,6 +32,6 @@ setup-submodules:
 	git submodule update --init --recursive
 
 setup-python:
-	python -m venv .venv
+	python3 -m venv .venv
 	@echo "Installing Python dependencies"
-	pip3 install -r requirements.txt
+	python3 -m pip install -r "requirements.txt" --break-system-packages
