@@ -204,6 +204,7 @@ class Snake{
 
         void Setup(){
             ScoreManager::Instance.Reset();
+            Food::Instance.Generate();
             direction = UP;
             bufferDirection = UP;
             snakeBody = std::queue<Vector2>();
