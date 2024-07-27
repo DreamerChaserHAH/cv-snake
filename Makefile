@@ -18,6 +18,9 @@ setup-opencv:
 ifeq ($(OS),Darwin)
 	@echo "Downloading OpenCV for MacOS"
 	brew install opencv
+else
+	@echo "Running on a different operating system"
+endif
 
 setup-submodules:
 	@echo "Initializing and updating git submodules"
