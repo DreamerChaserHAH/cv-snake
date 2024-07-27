@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <ai.hpp>
 
 int main() {
     // Open the default camera (camera index 0)
