@@ -3,6 +3,9 @@ import pyautogui
 import pygetwindow as gw
 import time
 import re
+import cv2
+import pytesseract
+
 process = subprocess.Popen(['build/cv-snake'])
 
 def is_process_running(process):
@@ -44,12 +47,41 @@ x=int(info_list[1])
 y=int(info_list[2])
 width=int(info_list[3])
 height=int(info_list[4])
-screenshot = pyautogui.screenshot(region=(x, y, width, height))
+screenshot = pyautogui.screenshot(region=(x, y,int(3*width/4), int(height/3.5)))
         
 # Save the screenshot
 filename = f"{title.replace(' ', '_')}_screenshot.png"
 screenshot.save(filename)
 print(f"Screenshot saved as {filename}")
+
+# Load the image
+image = cv2.imread(filename)
+
+# Resize the image to make the text larger
+resized_image = cv2.resize(image, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+
+# Convert the image to grayscale
+gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+
+# Invert the grayscale image
+inverted_gray = cv2.bitwise_not(gray)
+
+# Apply thresholding
+_, thresh = cv2.threshold(inverted_gray, 100, 255, cv2.THRESH_BINARY)
+
+# Use Tesseract to extract text from the ROI
+score_text = pytesseract.image_to_string(thresh, config='--psm 6 digits')
+
+# Post-process the extracted text to filter out non-digit characters and clean the result
+cleaned_score_text = ''.join(filter(str.isdigit, score_text))
+
+# Display the processed ROI for debugging
+cv2.imshow('Processed ROI', thresh)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+print(f'Extracted Score: {cleaned_score_text}')
+
 
 #time.sleep(1)
 #pyautogui.keyDown('a')
