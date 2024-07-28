@@ -1,96 +1,94 @@
 import subprocess
-import pyautogui
-import pygetwindow as gw
 import time
 import re
 import cv2
 import pytesseract
+import pyautogui
 
-process = subprocess.Popen(['build/cv-snake'])
+class GameWindow:
+    def __init__(self, command):
+        self.process = subprocess.Popen(command)
+        self.pid = self.process.pid
+        self.title = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
 
-def is_process_running(process):
-   return process.poll() is None
+    def is_process_running(self):
+        return self.process.poll() is None
 
-while not is_process_running(process):
-    time.sleep(0.1)   # Get the PID of the subprocess
+    def get_window_info(self):
+        apple_script = f'''
+            tell application "System Events"
+                set frontApp to first application process whose unix id is {self.pid}
+                if exists (1st window of frontApp) then
+                    set w to 1st window of frontApp
+                    return {{name of w, position of w, size of w}}
+                else
+                    return {{}}
+                end if
+            end tell
+        '''
+        try:
+            result = subprocess.check_output(['osascript', '-e', apple_script]).decode('utf-8').strip()
+            if result:
+                info_list = result.split(",")
+                self.title = info_list[0]
+                self.x = int(info_list[1])
+                self.y = int(info_list[2])
+                self.width = int(info_list[3])
+                self.height = int(info_list[4])
+                return True
+            else:
+                print(f"No window found for PID {self.pid}")
+                return False
+        except subprocess.CalledProcessError:
+            print(f"Could not get window info for PID {self.pid}")
+            return False
 
+    def capture_screenshot(self, filename):
+        screenshot = pyautogui.screenshot(region=(self.x, self.y, int(3 * self.width / 4), int(self.height / 3.5)))
+        screenshot.save(filename)
+        print(f"Screenshot saved as {filename}")
+
+    def terminate_process(self):
+        self.process.terminate()
+
+def preprocess_image(filename):
+    image = cv2.imread(filename)
+    resized_image = cv2.resize(image, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+    inverted_gray = cv2.bitwise_not(gray)
+    _, thresh = cv2.threshold(inverted_gray, 100, 255, cv2.THRESH_BINARY)
+    return thresh
+
+def extract_text_from_image(image):
+    score_text = pytesseract.image_to_string(image, config='--psm 6 digits')
+    cleaned_score_text = ''.join(filter(str.isdigit, score_text))
+    return cleaned_score_text
+
+def main():
+    command = ['build/cv-snake']
+    game_window = GameWindow(command)
     
-# Get the PID of the subprocess
-pid = process.pid
-    
-# Use AppleScript to get the title and bounds of the window with the specific PID
-apple_script = f'''
-    tell application "System Events"
-        set frontApp to first application process whose unix id is {pid}
-        if exists (1st window of frontApp) then
-            set w to 1st window of frontApp
-            return {{name of w, position of w, size of w}}
-        else
-            return {{}}
-        end if
-    end tell
-    '''
-    
-try:
-    result = subprocess.check_output(['osascript', '-e', apple_script]).decode('utf-8').strip()
-    if result:
-        info_list=result.split(",")
-        print(info_list)
-    else:
-        print(f"No window found for PID {pid}")
-except subprocess.CalledProcessError:
-    print(f"Could not get window info for PID {pid}")
+    while not game_window.is_process_running():
+        time.sleep(0.1)
 
-    
-title=info_list[0]
-x=int(info_list[1])
-y=int(info_list[2])
-width=int(info_list[3])
-height=int(info_list[4])
-screenshot = pyautogui.screenshot(region=(x, y,int(3*width/4), int(height/3.5)))
+    if game_window.get_window_info():
+        screenshot_filename = f"{game_window.title.replace(' ', '_')}_screenshot.png"
+        game_window.capture_screenshot(screenshot_filename)
         
-# Save the screenshot
-filename = f"{title.replace(' ', '_')}_screenshot.png"
-screenshot.save(filename)
-print(f"Screenshot saved as {filename}")
+        processed_image = preprocess_image(screenshot_filename)
+        
+        cv2.imshow('Processed ROI', processed_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        
+        extracted_score = extract_text_from_image(processed_image)
+        print(f'Extracted Score: {extracted_score}')
 
-# Load the image
-image = cv2.imread(filename)
+    game_window.terminate_process()
 
-# Resize the image to make the text larger
-resized_image = cv2.resize(image, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-
-# Convert the image to grayscale
-gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
-
-# Invert the grayscale image
-inverted_gray = cv2.bitwise_not(gray)
-
-# Apply thresholding
-_, thresh = cv2.threshold(inverted_gray, 100, 255, cv2.THRESH_BINARY)
-
-# Use Tesseract to extract text from the ROI
-score_text = pytesseract.image_to_string(thresh, config='--psm 6 digits')
-
-# Post-process the extracted text to filter out non-digit characters and clean the result
-cleaned_score_text = ''.join(filter(str.isdigit, score_text))
-
-# Display the processed ROI for debugging
-cv2.imshow('Processed ROI', thresh)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-print(f'Extracted Score: {cleaned_score_text}')
-
-
-#time.sleep(1)
-#pyautogui.keyDown('a')
-#time.sleep(1)
-#pyautogui.keyDown('s')
-#time.sleep(1)
-#pyautogui.keyDown('d')
-#time.sleep(1)
-#pyautogui.keyDown('w')
-#time.sleep(1)
-
-process.terminate()
+if __name__ == "__main__":
+    main()
